@@ -3,10 +3,36 @@ const Event = require('../models/Event');
 // Create an event
 //http://localhost:5000/api/events
 const newEvent = async (req, res) => {
+  try {
     const { eventName, startDate, startTime, endDate, endTime, location, description, eventType, ticketsRequired, maxCapacity } = req.body;
-    const event = await Event.create({ creator: req.user.id, eventName, startDate, startTime, endDate, endTime, location, description, eventType, ticketsRequired, maxCapacity });
+
+    // Ensure required fields are present
+    if (!eventName || !startDate || !startTime || !endDate || !endTime) {
+      return res.status(400).json({ message: 'All required fields must be filled.' });
+    }
+
+    // Create the event and save it to the database
+    const event = await Event.create({
+      creator: req.user.id,
+      eventName,
+      startDate,
+      startTime,
+      endDate,
+      endTime,
+      location,
+      description,
+      eventType,
+      ticketsRequired,
+      maxCapacity,
+    });
+
     res.status(201).json(event);
+  } catch (error) {
+    console.error('Error creating event:', error);
+    res.status(500).json({ message: 'Server error while creating event.' });
+  }
 };
+
 
 // Get all events
 //http://localhost:5000/api/events
@@ -26,7 +52,7 @@ const getEventById = async (req, res) => {
   }
 };
 
-// Edit an event (Only creator can edit)
+// http://localhost:5000/api/events/id
 const updateEvent = async (req, res) => {
   const event = await Event.findById(req.params.id);
 
@@ -50,15 +76,27 @@ const updateEvent = async (req, res) => {
 };
 
 // Delete an event (Only creator can delete)
+//
+// http://localhost:5000/api/events/id
 const deleteEvent = async (req, res) => {
-  const event = await Event.findById(req.params.id);
+  const { id } = req.params;
 
-  if (event && event.creator.toString() === req.user._id.toString()) {
-    await event.deleteOne();
-    res.json({ message: 'Event removed' });
-  } else {
-    res.status(401).json({ message: 'You can only delete your own events' });
-  }
+    try {
+        const event = await Event.findById(id);
+        if (!event) {
+            return res.status(404).json({ message: 'Event not found' });
+        }
+
+        // Check if the current user is the creator of the event
+        if (event.creator.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        await Event.findByIdAndDelete(id);
+        res.json({ message: 'Event deleted' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
 // Attend an event

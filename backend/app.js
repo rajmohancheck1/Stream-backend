@@ -1,7 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
-const cors = require('cors'); // Import the CORS middleware
+const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 
@@ -10,14 +10,16 @@ connectDB();
 
 const app = express();
 
-// Enable CORS with default options
-app.use(cors());
+// CORS options to allow credentials from specific origin
+const corsOptions = {
+  origin: 'http://localhost:3000', // Allow only this origin
+  credentials: true,               // Allow credentials (cookies)
+};
 
-// Or if you need more control, you can configure specific origins like this:
-// app.use(cors({ origin: 'http://localhost:3000' }));
-
+app.use(cors(corsOptions)); // Apply CORS with the specified options
 app.use(express.json());
 
+// Routes
 app.use('/api/users', userRoutes);
 app.use('/api/events', eventRoutes);
 
