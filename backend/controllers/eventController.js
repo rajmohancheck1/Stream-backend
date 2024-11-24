@@ -54,26 +54,40 @@ const getEventById = async (req, res) => {
 
 // http://localhost:5000/api/events/id
 const updateEvent = async (req, res) => {
-  const event = await Event.findById(req.params.id);
+  try {
+    const event = await Event.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ message: 'Event not found' });
+    }
 
-  if (event && event.creator.toString() === req.user._id.toString()) {
-    event.eventName = req.body.eventName || event.eventName;
-    event.startDate = req.body.startDate || event.startDate;
-    event.endDate = req.body.endDate || event.endDate;
-    event.locationType = req.body.locationType || event.locationType;
-    event.location = req.body.location || event.location;
-    event.virtualLink = req.body.virtualLink || event.virtualLink;
-    event.description = req.body.description || event.description;
-    event.tickets = req.body.tickets || event.tickets;
-    event.requireApproval = req.body.requireApproval || event.requireApproval;
-    event.maxCapacity = req.body.maxCapacity || event.maxCapacity;
+    // Ensure only the creator can update the event
+    if (event.creator.toString() !== req.user.id) {
+      return res.status(401).json({ message: 'You can only edit your own events' });
+    }
+
+    // Update fields if provided, fallback to existing values
+    event.eventName = req.body.eventName ?? event.eventName;
+    event.startDate = req.body.startDate ?? event.startDate;
+    event.endDate = req.body.endDate ?? event.endDate;
+    event.startTime = req.body.startTime ?? event.startTime;
+    event.endTime = req.body.endTime ?? event.endTime;
+    event.location = req.body.location ?? event.location;
+    event.virtualLink = req.body.virtualLink ?? event.virtualLink;
+    event.description = req.body.description ?? event.description;
+    event.eventType = ['Public', 'Private'].includes(req.body.eventType)
+      ? req.body.eventType
+      : event.eventType;
+    event.ticketsRequired = req.body.ticketsRequired ?? event.ticketsRequired;
+    event.maxCapacity = req.body.maxCapacity ?? event.maxCapacity;
 
     const updatedEvent = await event.save();
     res.json(updatedEvent);
-  } else {
-    res.status(401).json({ message: 'You can only edit your own events' });
+  } catch (error) {
+    console.error('Error updating event:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
+
 
 // Delete an event (Only creator can delete)
 //
