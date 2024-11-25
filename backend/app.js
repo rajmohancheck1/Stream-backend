@@ -1,12 +1,10 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const connectDB = require('./config/db');
 const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 
 dotenv.config();
-connectDB();
 
 const app = express();
 
@@ -18,6 +16,7 @@ const corsOptions = {
 
 app.use(cors(corsOptions)); // Apply CORS with the specified options
 app.use(express.json());
+app.use(express.static('public')); // For static assets if needed
 
 // Routes
 app.use('/api/users', userRoutes);
